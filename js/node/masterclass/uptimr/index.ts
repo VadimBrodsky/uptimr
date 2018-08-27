@@ -2,7 +2,7 @@
  * Primary file for the API
  *
  */
-const http = require('http');
+import * as http from 'http';
 
 const server = http.createServer((req, res) => {
   res.end('Hello World\n');
@@ -10,4 +10,4 @@ const server = http.createServer((req, res) => {
 
 server.listen(3000, () => {
   console.log('The server is now listening on port 3000');
-})
+});
