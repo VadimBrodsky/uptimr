@@ -33,18 +33,52 @@ const server = http.createServer((req, res) => {
   req.on('end', () => {
     buffer += decoder.end();
 
-    // send the respose
-    res.end('Hello World\n');
-
     // log the response back
     console.log(
-      `Request received on path ${trimmedPath} with ${method} method with ${JSON.stringify(
+      `REQ: ${method} /${trimmedPath} ? ${JSON.stringify(
         query,
-      )} parameters, headers: ${JSON.stringify(headers)}`,
+      )} headers: ${JSON.stringify(headers)}`,
     );
+
+    // route to the correct handler
+    const currentHandler = router[trimmedPath] ? router[trimmedPath] : router.notFound;
+
+    // construct the payload for the handler
+    const data = {
+      headers,
+      method,
+      payload: buffer,
+      query,
+      trimmedPath,
+    };
+
+    // route the request
+    currentHandler(data, (statusCode = 200, payload = {}) => {
+      const payloadString = JSON.stringify(payload);
+      // send the respose
+      res.writeHead(statusCode);
+      res.end(payloadString);
+
+      // log the response
+      console.log('RES:', statusCode, payloadString);
+    });
   });
 });
 
 server.listen(3000, () => {
   console.log('The server is now listening on port 3000');
 });
+
+const handlers = {
+  sample(data, callback) {
+    callback(406, { name: 'sample handler' });
+  },
+  notFound(data, callback) {
+    callback(404);
+  },
+};
+
+const router = {
+  sample: handlers.sample,
+  notFound: handlers.notFound,
+};
