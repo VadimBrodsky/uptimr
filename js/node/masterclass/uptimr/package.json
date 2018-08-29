@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "ts-node index.ts",
-    "dev": "ts-node-dev index.ts"
+    "dev": "ts-node-dev index.ts",
+    "generateSSL": "openssl req -newkey rsa:2048 -new -nodes -x509 -days 3650 -keyout ./htttps/key.pem -out ./https/cert.pem"
   },
   "devDependencies": {
     "@types/node": "^10.9.2",

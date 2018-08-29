@@ -1,9 +1,11 @@
 import * as http from 'http';
+import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
+import * as fs from 'fs';
 import config from './config';
 
-const server = http.createServer((req, res) => {
+const unifiedServer = (req, res) => {
   // get the URL and parse it
   const parsedUrl = url.parse(req.url, true);
 
@@ -66,11 +68,26 @@ const server = http.createServer((req, res) => {
       console.log('RES:', statusCode, payloadString);
     });
   });
+};
+
+const httpServer = http.createServer((req, res) => unifiedServer(req, res));
+const httpsServer = https.createServer({
+  cert: fs.readFileSync('./https/cert.pem'),
+  key: fs.readFileSync('./https/key.pem'),
+}, (req, res) => unifiedServer(req, res));
+
+httpServer.listen(config.httpPort, () => {
+  console.log(
+    `The http server is now listening on port ${config.httpPort} in ${config.envName} mode`,
+  );
 });
 
-server.listen(config.port, () => {
-  console.log(`The server is now listening on port ${config.port} in ${config.envName} mode`);
+httpsServer.listen(config.httpsPort, () => {
+  console.log(
+    `The https server is now listening on port ${config.httpsPort} in ${config.envName} mode`,
+  );
 });
+
 
 const handlers = {
   sample(data, callback) {
