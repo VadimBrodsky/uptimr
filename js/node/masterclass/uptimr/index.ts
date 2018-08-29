@@ -35,9 +35,14 @@ const server = http.createServer((req, res) => {
 
     // log the response back
     console.log(
-      `REQ: ${method} /${trimmedPath} ? ${JSON.stringify(
-        query,
-      )} headers: ${JSON.stringify(headers)}`,
+      'REQ:',
+      method,
+      '/',
+      trimmedPath,
+      '?',
+      JSON.stringify(query),
+      'headers',
+      JSON.stringify(headers),
     );
 
     // route to the correct handler
@@ -56,6 +61,7 @@ const server = http.createServer((req, res) => {
     currentHandler(data, (statusCode = 200, payload = {}) => {
       const payloadString = JSON.stringify(payload);
       // send the respose
+      res.setHeader('Content-Type', 'application/json');
       res.writeHead(statusCode);
       res.end(payloadString);
 
