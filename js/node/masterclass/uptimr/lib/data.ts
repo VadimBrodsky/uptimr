@@ -4,12 +4,13 @@ import * as util from 'util';
 
 const close = util.promisify(fs.close);
 const open = util.promisify(fs.open);
-const writeFile = util.promisify(fs.writeFile);
 const readFile = util.promisify(fs.readFile);
 const truncate = util.promisify(fs.truncate);
 const unlink = util.promisify(fs.unlink);
+const writeFile = util.promisify(fs.writeFile);
 
-const filePath = (dir: string, file: string) => path.join(__dirname, '../.data', dir, `${file}.json`);
+const filePath = (dir: string, file: string) =>
+  path.join(__dirname, '../.data', dir, `${file}.json`);
 
 export const create = (dir, file, data) =>
   open(filePath(dir, file), 'wx').then((fileDescriptor) =>
