@@ -4,12 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "ts-node index.ts"
+    "start": "ts-node index.ts",
+    "dev": "ts-node-dev index.ts"
   },
   "devDependencies": {
     "@types/node": "^10.9.2",
     "prettier": "1.14.2",
     "ts-node": "^7.0.1",
+    "ts-node-dev": "^1.0.0-pre.26",
     "tslint": "^5.11.0",
     "tslint-config-prettier": "^1.15.0",
     "typescript": "^3.0.1"
