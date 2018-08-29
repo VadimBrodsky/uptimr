@@ -4,13 +4,7 @@ import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './config';
-import { create } from './lib/data';
-
-create('test', 'newFile', { test: true })
-  .then(() => console.log('all is good'))
-  .catch((err) => {
-    console.log('was an error', err);
-  });
+import { create, destroy } from './lib/data';
 
 const unifiedServer = (req, res) => {
   // get the URL and parse it
