@@ -1,10 +1,7 @@
-/*
- * Primary file for the API
- *
- */
 import * as http from 'http';
 import * as sd from 'string_decoder';
 import * as url from 'url';
+import config from './config';
 
 const server = http.createServer((req, res) => {
   // get the URL and parse it
@@ -71,8 +68,8 @@ const server = http.createServer((req, res) => {
   });
 });
 
-server.listen(3000, () => {
-  console.log('The server is now listening on port 3000');
+server.listen(config.port, () => {
+  console.log(`The server is now listening on port ${config.port} in ${config.envName} mode`);
 });
 
 const handlers = {
@@ -85,6 +82,6 @@ const handlers = {
 };
 
 const router = {
-  sample: handlers.sample,
   notFound: handlers.notFound,
+  sample: handlers.sample,
 };
