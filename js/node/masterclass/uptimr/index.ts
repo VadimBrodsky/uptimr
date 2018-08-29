@@ -4,10 +4,9 @@ import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './config';
-import _data from './lib/data';
+import { create } from './lib/data';
 
-_data
-  .create('test', 'newFile', { test: true })
+create('test', 'newFile', { test: true })
   .then(() => console.log('all is good'))
   .catch((err) => {
     console.log('was an error', err);
