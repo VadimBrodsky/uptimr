@@ -1,8 +1,8 @@
+import * as fs from 'fs';
 import * as http from 'http';
 import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
-import * as fs from 'fs';
 import config from './config';
 
 const unifiedServer = (req, res) => {
@@ -70,6 +70,20 @@ const unifiedServer = (req, res) => {
   });
 };
 
+const handlers = {
+  sample(data, callback) {
+    callback(406, { name: 'sample handler' });
+  },
+  notFound(data, callback) {
+    callback(404);
+  },
+};
+
+const router = {
+  notFound: handlers.notFound,
+  sample: handlers.sample,
+};
+
 const httpServer = http.createServer((req, res) => unifiedServer(req, res));
 const httpsServer = https.createServer({
   cert: fs.readFileSync('./https/cert.pem'),
@@ -87,18 +101,3 @@ httpsServer.listen(config.httpsPort, () => {
     `The https server is now listening on port ${config.httpsPort} in ${config.envName} mode`,
   );
 });
-
-
-const handlers = {
-  sample(data, callback) {
-    callback(406, { name: 'sample handler' });
-  },
-  notFound(data, callback) {
-    callback(404);
-  },
-};
-
-const router = {
-  notFound: handlers.notFound,
-  sample: handlers.sample,
-};
