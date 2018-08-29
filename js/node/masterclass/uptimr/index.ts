@@ -4,6 +4,11 @@ import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './config';
+import _data from './lib/data';
+
+_data.create('test', 'newFile', {test: true}, (err) => {
+  console.log('was an error', err);
+})
 
 const unifiedServer = (req, res) => {
   // get the URL and parse it
