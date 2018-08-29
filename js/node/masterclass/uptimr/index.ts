@@ -6,9 +6,12 @@ import * as url from 'url';
 import config from './config';
 import _data from './lib/data';
 
-_data.create('test', 'newFile', {test: true}, (err) => {
-  console.log('was an error', err);
-})
+_data
+  .create('test', 'newFile', { test: true })
+  .then(() => console.log('all is good'))
+  .catch((err) => {
+    console.log('was an error', err);
+  });
 
 const unifiedServer = (req, res) => {
   // get the URL and parse it
@@ -89,19 +92,26 @@ const router = {
 };
 
 const httpServer = http.createServer((req, res) => unifiedServer(req, res));
-const httpsServer = https.createServer({
-  cert: fs.readFileSync('./https/cert.pem'),
-  key: fs.readFileSync('./https/key.pem'),
-}, (req, res) => unifiedServer(req, res));
+const httpsServer = https.createServer(
+  {
+    cert: fs.readFileSync('./https/cert.pem'),
+    key: fs.readFileSync('./https/key.pem'),
+  },
+  (req, res) => unifiedServer(req, res),
+);
 
 httpServer.listen(config.httpPort, () => {
   console.log(
-    `The http server is now listening on port ${config.httpPort} in ${config.envName} mode`,
+    `The http server is now listening on port ${config.httpPort} in ${
+      config.envName
+    } mode`,
   );
 });
 
 httpsServer.listen(config.httpsPort, () => {
   console.log(
-    `The https server is now listening on port ${config.httpsPort} in ${config.envName} mode`,
+    `The https server is now listening on port ${config.httpsPort} in ${
+      config.envName
+    } mode`,
   );
 });

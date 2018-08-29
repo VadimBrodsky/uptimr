@@ -1,31 +1,19 @@
 import * as fs from 'fs';
 import * as path from 'path';
+import * as util from 'util';
 
-const baseDir = path.join(__dirname, '../.data/');
+const open = util.promisify(fs.open);
+const writeFile = util.promisify(fs.writeFile);
+const close = util.promisify(fs.close);
+
+const baseDir = path.join(__dirname, '../.data');
 
 const lib = {
-  create(dir, file, data, callback) {
-    fs.open(`${baseDir}/${file}.json`, 'wx', (fsOpenErr, fileDescriptor) => {
-      if (!fsOpenErr && fileDescriptor) {
-        fs.writeFile(fileDescriptor, JSON.stringify(data), (fsWriteErr) => {
-          if (!fsWriteErr) {
-            fs.close(fileDescriptor, (fsCloseErr) => {
-              if (!fsCloseErr) {
-                callback(false);
-              } else {
-                callback('Error closing file');
-              }
-            });
-          } else {
-            callback('Error writing to new file');
-          }
-        })
-
-      } else {
-        callback('Cannot create new file, it may already exist')
-      }
+  create(dir, file, data) {
+    return open(`${baseDir}/${file}.json`, 'wx').then((fileDescriptor) => {
+      writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor));
     });
-  }
-}
+  },
+};
 
 export default lib;
