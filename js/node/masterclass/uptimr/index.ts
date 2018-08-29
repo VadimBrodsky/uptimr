@@ -45,7 +45,7 @@ const unifiedServer = (req, res) => {
     );
 
     // route to the correct handler
-    const currentHandler = router[trimmedPath] ? router[trimmedPath] : router.notFound;
+    const currentHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
 
     // construct the payload for the handler
     const data = {
@@ -71,8 +71,8 @@ const unifiedServer = (req, res) => {
 };
 
 const handlers = {
-  sample(data, callback) {
-    callback(406, { name: 'sample handler' });
+  ping(data, callback) {
+    callback(200);
   },
   notFound(data, callback) {
     callback(404);
@@ -80,8 +80,7 @@ const handlers = {
 };
 
 const router = {
-  notFound: handlers.notFound,
-  sample: handlers.sample,
+  ping: handlers.ping,
 };
 
 const httpServer = http.createServer((req, res) => unifiedServer(req, res));
