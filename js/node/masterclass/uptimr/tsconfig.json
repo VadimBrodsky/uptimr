@@ -2,7 +2,12 @@
   "compilerOptions": {
     "lib": ["es2017"],
     "module": "commonjs",
+    "noImplicitAny": false,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": false,
     "target": "es2017",
-    "typeRoots": ["./node_modules/@types", "./typings"],
+    "typeRoots": ["./node_modules/@types", "./typings"]
   }
 }
