@@ -3,7 +3,7 @@ import * as http from 'http';
 import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
-import config from './config';
+import config from './lib/config';
 import { parseJSON } from './lib/helpers';
 import { matchRoute } from './lib/router';
 

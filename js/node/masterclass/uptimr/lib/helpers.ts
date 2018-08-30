@@ -1,5 +1,5 @@
 import * as crypto from 'crypto';
-import config from '../config';
+import config from './config';
 
 export const hash = (pass: string) =>
   pass.length > 0
