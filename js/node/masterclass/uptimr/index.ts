@@ -4,7 +4,7 @@ import * as https from 'https';
 import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './config';
-import { create, destroy } from './lib/data';
+import { parseJSON } from './lib/helpers';
 import { matchRoute } from './lib/router';
 
 const unifiedServer = (req, res) => {
@@ -53,7 +53,7 @@ const unifiedServer = (req, res) => {
     const data = {
       headers,
       method,
-      payload: buffer,
+      payload: parseJSON(buffer),
       query,
       trimmedPath,
     };
