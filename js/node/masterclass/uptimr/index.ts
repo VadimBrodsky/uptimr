@@ -5,6 +5,7 @@ import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './config';
 import { create, destroy } from './lib/data';
+import { matchRoute } from './lib/router';
 
 const unifiedServer = (req, res) => {
   // get the URL and parse it
@@ -45,8 +46,8 @@ const unifiedServer = (req, res) => {
       JSON.stringify(headers),
     );
 
-    // route to the correct handler
-    const currentHandler = router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
+    // route to the correct handler controller
+    const controller = matchRoute(trimmedPath);
 
     // construct the payload for the handler
     const data = {
@@ -57,8 +58,8 @@ const unifiedServer = (req, res) => {
       trimmedPath,
     };
 
-    // route the request
-    currentHandler(data, (statusCode = 200, payload = {}) => {
+    // handle the request
+    controller(data, (statusCode = 200, payload = {}) => {
       const payloadString = JSON.stringify(payload);
       // send the respose
       res.setHeader('Content-Type', 'application/json');
@@ -71,18 +72,6 @@ const unifiedServer = (req, res) => {
   });
 };
 
-const handlers = {
-  ping(data, callback) {
-    callback(200);
-  },
-  notFound(data, callback) {
-    callback(404);
-  },
-};
-
-const router = {
-  ping: handlers.ping,
-};
 
 const httpServer = http.createServer((req, res) => unifiedServer(req, res));
 const httpsServer = https.createServer(
