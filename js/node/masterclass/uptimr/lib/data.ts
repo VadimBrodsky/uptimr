@@ -1,6 +1,7 @@
 import * as fs from 'fs';
 import * as path from 'path';
 import * as util from 'util';
+import { parseJSON } from './helpers';
 
 const close = util.promisify(fs.close);
 const open = util.promisify(fs.open);
@@ -17,7 +18,8 @@ export const create = (dir, file, data) =>
     writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor)),
   );
 
-export const read = (dir, file) => readFile(filePath(dir, file), 'utf8');
+export const read = (dir, file) =>
+  readFile(filePath(dir, file), 'utf8').then((data) => parseJSON(data));
 
 export const update = (dir, file, data) =>
   truncate(filePath(dir, file)).then(() =>
