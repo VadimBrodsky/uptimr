@@ -18,7 +18,7 @@ export const create = (dir, file, data) =>
     writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor)),
   );
 
-export const read = (dir, file) =>
+export const read = (dir: string, file: string) =>
   readFile(filePath(dir, file), 'utf8').then((data) => parseJSON(data));
 
 export const update = (dir, file, data) =>

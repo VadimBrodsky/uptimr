@@ -12,7 +12,7 @@ export const hash = (pass: string) =>
 export const validateTrimmedFn = (conditionFn) => (str) =>
   str && conditionFn(str.trim().length) ? str.trim() : false;
 
-export const parseJSON=  (str: string) => {
+export const parseJSON = (str: string) => {
   try {
     return JSON.parse(str);
   } catch {
