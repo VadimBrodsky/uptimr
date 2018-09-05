@@ -5,5 +5,5 @@ const router = {
   users: handlers.users,
 };
 
-export const matchRoute = (trimmedPath) =>
-  router[trimmedPath] ? router[trimmedPath] : handlers.notFound;
+export const matchRoute = (trimmedPath: string) =>
+  Object.keys(router).includes(trimmedPath) ? router[trimmedPath] : handlers.notFound;

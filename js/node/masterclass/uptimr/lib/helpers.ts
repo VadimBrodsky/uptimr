@@ -15,7 +15,7 @@ export const validateTrimmedFn = (conditionFn) => (str) =>
 export const parseJSON = (str: string) => {
   try {
     return JSON.parse(str);
-  } catch {
+  } catch (e) {
     return {};
   }
 };
