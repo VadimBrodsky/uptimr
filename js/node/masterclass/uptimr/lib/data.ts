@@ -14,9 +14,11 @@ const filePath = (dir: string, file: string) =>
   path.join(__dirname, '../.data', dir, `${file}.json`);
 
 export const create = (dir, file, data) =>
-  open(filePath(dir, file), 'wx').then((fileDescriptor) =>
-    writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor)),
-  );
+  open(filePath(dir, file), 'wx')
+    .then((fileDescriptor) =>
+      writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor)),
+    )
+    .then(() => data);
 
 export const read = (dir: string, file: string) =>
   readFile(filePath(dir, file), 'utf8').then((data) => parseJSON(data));

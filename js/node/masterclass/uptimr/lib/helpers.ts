@@ -9,7 +9,11 @@ export const hash = (pass: string) =>
         .digest('hex')
     : new Error('Failed creating a password hash');
 
-export const validateTrimmedFn = (conditionFn) => (str) =>
+type validateTrimmedFn = (
+  confitionFn: (len: number) => boolean,
+) => ((str: string) => string | false);
+
+export const validateTrimmedFn: validateTrimmedFn = (conditionFn) => (str) =>
   str && conditionFn(str.trim().length) ? str.trim() : false;
 
 export const parseJSON = (str: string) => {
@@ -18,4 +22,12 @@ export const parseJSON = (str: string) => {
   } catch (e) {
     return {};
   }
+};
+
+export const createToken = (length: number) => {
+  const characters: string = 'abcdefghijklmnopqrstuvwxyz1234567890';
+  // cannot iterate over an empty array
+  return Array.apply(null, Array(length))
+    .map(() => characters.charAt(Math.floor(Math.random() * characters.length)))
+    .join('');
 };

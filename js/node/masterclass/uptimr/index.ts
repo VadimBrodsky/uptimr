@@ -72,7 +72,6 @@ const unifiedServer = (req, res) => {
   });
 };
 
-
 const httpServer = http.createServer((req, res) => unifiedServer(req, res));
 const httpsServer = https.createServer(
   {
