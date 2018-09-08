@@ -2,6 +2,16 @@ import { create, destroy, read, update } from '../lib/data';
 import { hash, validateTrimmedFn } from '../lib/helpers';
 import { verifyToken } from './tokens';
 
+export const loggedInUser = async (tokenId: string) => {
+  try {
+    const { phone } = await read('tokens', tokenId);
+    const user: Iuser = await read('users', phone);
+    return user;
+  } catch(e) {
+    return Promise.reject(e);
+  }
+}
+
 const validateBlank = validateTrimmedFn((len) => len > 0);
 const validateTen = validateTrimmedFn((len) => len === 10);
 
@@ -11,6 +21,7 @@ interface Iuser {
   phone: string;
   password: string;
   tosAgreement: boolean;
+  userChecks?: [string];
 }
 
 interface Idata {

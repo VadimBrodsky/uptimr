@@ -1,3 +1,4 @@
+import checksController from '../controllers/checks';
 import tokensController from '../controllers/tokens';
 import usersController from '../controllers/users';
 
@@ -20,6 +21,14 @@ export const users = (data, callback) => {
 export const tokens = (data, callback) => {
   if (Object.keys(tokensController).includes(data.method)) {
     tokensController[data.method](data, callback);
+  } else {
+    callback(405);
+  }
+}
+
+export const checks = (data, callback) => {
+  if (Object.keys(checksController).includes(data.method)) {
+    checksController[data.method](data, callback);
   } else {
     callback(405);
   }

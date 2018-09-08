@@ -25,9 +25,10 @@ export const read = (dir: string, file: string) =>
 
 export const update = (dir, file, data) =>
   truncate(filePath(dir, file)).then(() =>
-    open(filePath(dir, file), 'r+').then((fileDescriptor) =>
-      writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor)),
-    ),
+    open(filePath(dir, file), 'r+').then((fileDescriptor) => {
+      writeFile(fileDescriptor, JSON.stringify(data)).then(() => close(fileDescriptor));
+      return data;
+    }),
   );
 
 export const destroy = (dir, file) => unlink(filePath(dir, file));
