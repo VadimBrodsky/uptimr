@@ -2,19 +2,19 @@ import checksController from '../controllers/checks';
 import tokensController from '../controllers/tokens';
 import usersController from '../controllers/users';
 
-export const ping = (data, callback) => {
-  callback(200);
+export const ping = (data) => {
+  return Promise.reject({ code: 200 });
 };
 
-export const notFound = (data, callback) => {
-  callback(404);
+export const notFound = (data) => {
+  return Promise.reject({ code: 404 });
 };
 
-export const users = (data, callback) => {
+export const users = (data) => {
   if (Object.keys(usersController).includes(data.method)) {
-    usersController[data.method](data, callback);
+    return usersController[data.method](data);
   } else {
-    callback(405);
+    return Promise.reject({ code: 405 })
   }
 };
 

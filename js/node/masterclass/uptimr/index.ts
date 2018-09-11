@@ -59,7 +59,7 @@ const unifiedServer = (req, res) => {
     };
 
     // handle the request
-    controller(data, (statusCode = 200, payload = {}) => {
+    controller(data).then((statusCode = 200, payload = {}) => {
       const payloadString = JSON.stringify(payload);
       // send the respose
       res.setHeader('Content-Type', 'application/json');
@@ -68,6 +68,10 @@ const unifiedServer = (req, res) => {
 
       // log the response
       console.log('RES:', statusCode, payloadString);
+    }, ({ status, payload = {} }) => {
+      res.setHeader('Content-Type', 'application/json');
+      res.writeHead(status);
+      res.end(payload);
     });
   });
 };
