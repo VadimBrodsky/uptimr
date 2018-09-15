@@ -48,7 +48,7 @@ export default {
     const tosAgreement = !!payload.tosAgreement;
 
     if (!firstName || !lastName || !phone || !password || !tosAgreement) {
-      throw new HTTPError(400, 'Missing required fields');
+      return Promise.reject(new HTTPError(400, 'Missing required fields'));
     }
 
     return read('users', phone).then(
@@ -64,7 +64,7 @@ export default {
           tosAgreement,
         }).then(
           () => ({ status: 200 }),
-          (e) => {
+          (createError) => {
             console.log(createError);
             throw new HTTPError(500, 'Could not create the new user');
           },
