@@ -31,7 +31,7 @@ interface Idata {
 }
 
 export default {
-  post({
+  async post({
     payload,
   }: {
     payload: {
@@ -52,25 +52,26 @@ export default {
       return Promise.reject(new HTTPError(400, 'Missing required fields'));
     }
 
-    return read('users', phone).then(
-      () => {
-        throw new HTTPError(400, 'A user with that phone number already exists');
-      },
-      () =>
-        create('users', phone, {
-          firstName,
-          lastName,
-          password: hash(password),
-          phone,
-          tosAgreement,
-        }).then(
-          () => ({ status: 200 }),
-          (createError) => {
-            logger(createError);
-            throw new HTTPError(500, 'Could not create the new user');
-          },
-        ),
-    );
+    try {
+      await read('users', phone);
+      return Promise.reject(
+        new HTTPError(400, 'A user with that phone number already exists'),
+      );
+    } catch (e) {
+      return create('users', phone, {
+        firstName,
+        lastName,
+        password: hash(password),
+        phone,
+        tosAgreement,
+      }).then(
+        () => ({ status: 200 }),
+        (createError) => {
+          logger(createError);
+          throw new HTTPError(500, 'Could not create the new user');
+        },
+      );
+    }
   },
 
   async get({
