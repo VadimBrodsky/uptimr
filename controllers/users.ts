@@ -66,37 +66,43 @@ export default {
         }).then(
           () => ({ status: 200 }),
           (createError) => {
-            logger(createError)
+            logger(createError);
             throw new HTTPError(500, 'Could not create the new user');
           },
         ),
     );
   },
 
-  get({ query, headers }: { query: { phone: string }; headers: { token: string } }, cb) {
+  async get({
+    query,
+    headers,
+  }: {
+    query: { phone: string };
+    headers: { token: string };
+  }) {
     const user = validateTen(query.phone);
 
     if (!user) {
-      throw new HTTPError(400, 'Missing required fields');
+      return Promise.reject(new HTTPError(400, 'Missing required fields'));
     }
 
     if (!headers.token) {
       throw new HTTPError(403, 'Missing required token in header, or token is invalid');
     }
 
-    return verifyToken(headers.token, user).then(
+    try {
+      await verifyToken(headers.token, user);
+    } catch (e) {
+      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+    }
+
+    return read('users', user).then(
+      ({ firstName, lastName, phone, tosAgreement }: Iuser) => ({
+        payload: { firstName, lastName, phone, tosAgreement },
+        status: 200,
+      }),
       () => {
-        read('users', user)
-          .then(({ firstName, lastName, phone, tosAgreement }: Iuser) => ({
-            payload: { firstName, lastName, phone, tosAgreement },
-            statusCode: 200,
-          }))
-          .catch(() => {
-            throw new HTTPError(404);
-          });
-      },
-      () => {
-        throw new HTTPError(403, 'Token is invalid');
+        throw new HTTPError(404);
       },
     );
   },
