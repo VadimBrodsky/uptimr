@@ -1,6 +1,7 @@
 import { create, destroy, read, update } from '../lib/data';
 import { hash, validateTrimmedFn } from '../lib/helpers';
 import HTTPError from '../lib/http-error';
+import logger from '../lib/logger';
 import { verifyToken } from './tokens';
 
 export const loggedInUser = async (tokenId: string) => {
@@ -65,7 +66,7 @@ export default {
         }).then(
           () => ({ status: 200 }),
           (createError) => {
-            console.log(createError);
+            logger(createError)
             throw new HTTPError(500, 'Could not create the new user');
           },
         ),
