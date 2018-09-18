@@ -131,3 +131,22 @@ describe('get', () => {
     expect(res).rejects.toHaveProperty('status', 404);
   });
 });
+
+describe('put', () => {
+  it('should update the user record', async () => {
+    const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
+    const readSpy = jest.spyOn(data, 'read').mockResolvedValueOnce({});
+    const updateSpy = jest.spyOn(data, 'update').mockResolvedValueOnce({});
+
+    const res = await usersController.put({
+      headers: { token: 'secret' },
+      payload: {
+        lastName: 'Stark',
+        phone: '2261234567',
+      },
+    });
+
+    expect(res.status).toEqual(200);
+    expect(updateSpy).toHaveBeenCalled();
+  });
+});

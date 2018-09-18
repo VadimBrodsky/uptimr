@@ -107,21 +107,18 @@ export default {
     );
   },
 
-  async put(
-    {
-      payload,
-      headers,
-    }: {
-      payload: {
-        phone: string;
-        firstName?: string;
-        lastName?: string;
-        password?: string;
-      };
-      headers: { token: string };
-    },
-    cb,
-  ) {
+  async put({
+    payload,
+    headers,
+  }: {
+    payload: {
+      phone: string;
+      firstName?: string;
+      lastName?: string;
+      password?: string;
+    };
+    headers: { token: string };
+  }) {
     // required
     const user = validateTen(payload.phone);
 
@@ -138,28 +135,31 @@ export default {
       throw new HTTPError(403, 'Missing required token in header, or token is invalid');
     }
 
-    return verifyToken(headers.token, user)
-      .then(() => {
-        if (firstName || lastName || password) {
-          read('users', user)
-            .then((storedData: Iuser) => {
-              update('users', user, {
-                ...storedData,
-                firstName: firstName ? firstName : storedData.firstName,
-                lastName: lastName ? lastName : storedData.lastName,
-                password: password ? hash(password) : storedData.password,
-              })
-                .then(() => cb(200))
-                .catch(() => {
-                  cb(500, { Error: 'Could not update the user' });
-                });
-            })
-            .catch(() => cb(400, { Error: 'The specified user does not exist' }));
-        } else {
-          cb(400, { Error: 'Missing fields to update' });
-        }
-      })
-      .catch(() => cb(403, { Error: 'Token is invalid' }));
+    try {
+      verifyToken(headers.token, user);
+    } catch (e) {
+      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+    }
+
+    if (!firstName && !lastName && !password) {
+      return Promise.reject(new HTTPError(400, 'Missing fields to update'));
+    }
+
+    try {
+      const userRecord: Iuser = await read('users', user);
+
+      return update('users', user, {
+        ...userRecord,
+        firstName: firstName ? firstName : userRecord.firstName,
+        lastName: lastName ? lastName : userRecord.lastName,
+        password: password ? hash(password) : userRecord.password,
+      }).then(
+        () => ({ status: 200 }),
+        () => Promise.reject(new HTTPError(500, 'Could not update the user')),
+      );
+    } catch (e) {
+      return Promise.reject(new HTTPError(400, 'The specified user does not exist'));
+    }
   },
 
   delete(
