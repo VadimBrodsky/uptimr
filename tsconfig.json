@@ -9,5 +9,8 @@
     "noUnusedParameters": false,
     "target": "es2017",
     "typeRoots": ["./node_modules/@types", "./typings"]
-  }
+  },
+  "exclude": [
+    "node_modules"
+  ]
 }

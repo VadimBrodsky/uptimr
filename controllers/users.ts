@@ -137,7 +137,7 @@ export default {
     }
 
     try {
-      verifyToken(headers.token, user);
+      await verifyToken(headers.token, user);
     } catch (e) {
       return Promise.reject(new HTTPError(403, 'Token is invalid'));
     }
@@ -159,7 +159,7 @@ export default {
         () => Promise.reject(new HTTPError(500, 'Could not update the user')),
       );
     } catch (e) {
-      return Promise.reject(new HTTPError(400, 'The specified user does not exist'));
+      return Promise.reject(new HTTPError(404, 'The specified user does not exist'));
     }
   },
 

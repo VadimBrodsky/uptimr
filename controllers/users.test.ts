@@ -51,7 +51,7 @@ describe('post', () => {
     expect(res).rejects.toHaveProperty('status', 400);
   });
 
-  it('shuld try return 500 if user creation failed', () => {
+  it('should return 500 if user creation failed', () => {
     const readSpy = jest.spyOn(data, 'read').mockRejectedValue(new Error());
     const createSpy = jest.spyOn(data, 'create').mockRejectedValue(new Error());
 
@@ -148,5 +148,78 @@ describe('put', () => {
 
     expect(res.status).toEqual(200);
     expect(updateSpy).toHaveBeenCalled();
+  });
+
+  it('should return 400 if missing the required phone field', () => {
+    const res = usersController.put({
+      headers: { token: 'secret' },
+      payload: { phone: undefined },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+
+  it('should return 403 if token is missing', () => {
+    const res = usersController.put({
+      headers: {},
+      payload: { phone: '2261234567' },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 403);
+  });
+
+  it('should return 403 if token is not valid', () => {
+    const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockRejectedValueOnce(new Error());
+
+    const res = usersController.put({
+      headers: { token: 'badtoken' },
+      payload: { phone: '2261234567' },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 403);
+  });
+
+  it('should return 400 if missing any of the required fields to update', () => {
+    const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
+
+    const res = usersController.put({
+      headers: { token: 'secret' },
+      payload: {
+        phone: '2261234567',
+      },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+
+  it('should return 404 if the user does not exist', () => {
+    const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
+    const readSpy = jest.spyOn(data, 'read').mockRejectedValueOnce(new Error());
+
+    const res = usersController.put({
+      headers: { token: 'secret' },
+      payload: {
+        lastName: 'Stark',
+        phone: '2261234567',
+      },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 404);
+  });
+  
+  it('should return 500 if user update failed', () => {
+    const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
+    const readSpy = jest.spyOn(data, 'read').mockResolvedValueOnce({});
+    const updateSpy = jest.spyOn(data, 'update').mockRejectedValueOnce(new Error());
+
+    const res = usersController.put({
+      headers: { token: 'secret' },
+      payload: {
+        lastName: 'Stark',
+        phone: '2261234567',
+      },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 500);
   });
 });
