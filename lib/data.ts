@@ -31,4 +31,4 @@ export const update = (dir, file, data) =>
     }),
   );
 
-export const destroy = (dir, file) => unlink(filePath(dir, file));
+export const destroy = (dir: string, file: string) => unlink(filePath(dir, file));

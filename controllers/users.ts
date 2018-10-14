@@ -163,29 +163,39 @@ export default {
     }
   },
 
-  delete(
-    { payload, headers }: { payload: { phone: string }; headers: { token: string } },
-    cb,
-  ) {
+  async delete({
+    payload,
+    headers,
+  }: {
+    payload: { phone: string };
+    headers: { token: string };
+  }) {
     const user = validateTen(payload.phone);
-    if (user) {
-      if (headers.token) {
-        verifyToken(headers.token, user)
-          .then(() => {
-            read('users', user)
-              .then(() => {
-                destroy('users', user)
-                  .then(() => cb(200))
-                  .catch(() => cb(500, { Error: 'Could not delete the specified user' }));
-              })
-              .catch(() => cb(400, { Error: 'Could not find the specified user' }));
-          })
-          .catch(() => cb(403, { Error: 'Token is invalid' }));
-      } else {
-        cb(403, { Error: 'Missing required token in header, or token is invalid' });
-      }
-    } else {
-      cb(400, { Error: 'Missing required fields' });
+    if (!user) {
+      throw new HTTPError(400, 'Missing required fields');
+    }
+
+    if (!headers.token) {
+      throw new HTTPError(403, 'Missing required token in header, or token is invalid');
+    }
+
+    try {
+      await verifyToken(headers.token, user);
+    } catch (e) {
+      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+    }
+
+    try {
+      await read('users', user);
+    } catch (e) {
+      return Promise.reject(new HTTPError(404, 'The specified user does not exist'));
+    }
+
+    try {
+      await destroy('users', user);
+      return { status: 200 };
+    } catch (e) {
+      return Promise.reject(new HTTPError(500, 'Could not delete the specified user'));
     }
   },
 };
