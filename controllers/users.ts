@@ -71,10 +71,11 @@ export default {
         phone,
         tosAgreement,
       });
-      return { status: 200 };
     } catch (e) {
       throw new HTTPError(500, 'Could not create the new user');
     }
+
+    return { status: 200 };
   },
 
   async get({
@@ -162,10 +163,11 @@ export default {
         lastName: lastName ? lastName : userRecord.lastName,
         password: password ? hash(password) : userRecord.password,
       });
-      return { status: 200 };
     } catch (e) {
       throw new HTTPError(500, 'Could not update the user');
     }
+
+    return { status: 200 };
   },
 
   async delete({
@@ -198,9 +200,10 @@ export default {
 
     try {
       await destroy('users', user);
-      return { status: 200 };
     } catch (e) {
       throw new HTTPError(500, 'Could not delete the specified user');
     }
+
+    return { status: 200 };
   },
 };
