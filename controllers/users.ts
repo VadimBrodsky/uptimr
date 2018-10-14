@@ -52,25 +52,28 @@ export default {
       return Promise.reject(new HTTPError(400, 'Missing required fields'));
     }
 
+    let existingUser;
     try {
-      await read('users', phone);
-      return Promise.reject(
-        new HTTPError(400, 'A user with that phone number already exists'),
-      );
+      existingUser = await read('users', phone);
     } catch (e) {
-      return create('users', phone, {
+      existingUser = null;
+    }
+
+    if (existingUser) {
+      throw new HTTPError(400, 'A user with that phone number already exists');
+    }
+
+    try {
+      await create('users', phone, {
         firstName,
         lastName,
         password: hash(password),
         phone,
         tosAgreement,
-      }).then(
-        () => ({ status: 200 }),
-        (createError) => {
-          logger(createError);
-          throw new HTTPError(500, 'Could not create the new user');
-        },
-      );
+      });
+      return { status: 200 };
+    } catch (e) {
+      throw new HTTPError(500, 'Could not create the new user');
     }
   },
 
@@ -84,7 +87,7 @@ export default {
     const user = validateTen(query.phone);
 
     if (!user) {
-      return Promise.reject(new HTTPError(400, 'Missing required fields'));
+      throw new HTTPError(400, 'Missing required fields');
     }
 
     if (!headers.token) {
@@ -94,18 +97,17 @@ export default {
     try {
       await verifyToken(headers.token, user);
     } catch (e) {
-      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+      throw new HTTPError(403, 'Token is invalid');
     }
 
-    return read('users', user).then(
-      ({ firstName, lastName, phone, tosAgreement }: Iuser) => ({
-        payload: { firstName, lastName, phone, tosAgreement },
+    try {
+      return {
+        payload: await read('users', user),
         status: 200,
-      }),
-      () => {
-        throw new HTTPError(404);
-      },
-    );
+      };
+    } catch (e) {
+      throw new HTTPError(404);
+    }
   },
 
   async put({
@@ -139,27 +141,30 @@ export default {
     try {
       await verifyToken(headers.token, user);
     } catch (e) {
-      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+      throw new HTTPError(403, 'Token is invalid');
     }
 
     if (!firstName && !lastName && !password) {
-      return Promise.reject(new HTTPError(400, 'Missing fields to update'));
+      throw new HTTPError(400, 'Missing fields to update');
+    }
+
+    let userRecord: Iuser;
+    try {
+      userRecord = await read('users', user);
+    } catch (e) {
+      throw new HTTPError(404, 'The specified user does not exist');
     }
 
     try {
-      const userRecord: Iuser = await read('users', user);
-
-      return update('users', user, {
+      await update('users', user, {
         ...userRecord,
         firstName: firstName ? firstName : userRecord.firstName,
         lastName: lastName ? lastName : userRecord.lastName,
         password: password ? hash(password) : userRecord.password,
-      }).then(
-        () => ({ status: 200 }),
-        () => Promise.reject(new HTTPError(500, 'Could not update the user')),
-      );
+      });
+      return { status: 200 };
     } catch (e) {
-      return Promise.reject(new HTTPError(404, 'The specified user does not exist'));
+      throw new HTTPError(500, 'Could not update the user');
     }
   },
 
@@ -182,20 +187,20 @@ export default {
     try {
       await verifyToken(headers.token, user);
     } catch (e) {
-      return Promise.reject(new HTTPError(403, 'Token is invalid'));
+      throw new HTTPError(403, 'Token is invalid');
     }
 
     try {
       await read('users', user);
     } catch (e) {
-      return Promise.reject(new HTTPError(404, 'The specified user does not exist'));
+      throw new HTTPError(404, 'The specified user does not exist');
     }
 
     try {
       await destroy('users', user);
       return { status: 200 };
     } catch (e) {
-      return Promise.reject(new HTTPError(500, 'Could not delete the specified user'));
+      throw new HTTPError(500, 'Could not delete the specified user');
     }
   },
 };
