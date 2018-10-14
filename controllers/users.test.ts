@@ -1,6 +1,6 @@
 import * as data from '../lib/data';
 import * as tokens from './tokens';
-import usersController from './users';
+import * as usersController from './users';
 
 jest.mock('../lib/logger');
 
@@ -226,9 +226,9 @@ describe('put', () => {
   });
 });
 
-describe('delete', () => {
+describe('destroy', () => {
   it('should return 400 if missing the required phone field', () => {
-    const res = usersController.delete({ headers: { token: 'secret' },
+    const res = usersController.destroy({ headers: { token: 'secret' },
       payload: { phone: undefined },
     });
 
@@ -236,7 +236,7 @@ describe('delete', () => {
   });
 
   it('should return 403 if token is missing', () => {
-    const res = usersController.delete({
+    const res = usersController.destroy({
       headers: { token: undefined },
       payload: { phone: '2251234567' },
     });
@@ -247,7 +247,7 @@ describe('delete', () => {
   it('should return 403 if token is not valid', () => {
     const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockRejectedValueOnce(new Error());
 
-    const res = usersController.delete({
+    const res = usersController.destroy({
       headers: { token: 'secret' },
       payload: { phone: '2251234567' },
     });
@@ -259,7 +259,7 @@ describe('delete', () => {
     const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
     const readSpy = jest.spyOn(data, 'read').mockRejectedValueOnce(new Error());
 
-    const res = usersController.delete({
+    const res = usersController.destroy({
       headers: { token: 'secret' },
       payload: { phone: '2251234567' },
     });
@@ -267,12 +267,12 @@ describe('delete', () => {
     expect(res).rejects.toHaveProperty('status', 404);
   });
 
-  it('should return 500 if user delete failed', () => {
+  it('should return 500 if user destroy failed', () => {
     const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
     const readSpy = jest.spyOn(data, 'read').mockResolvedValueOnce({});
     const updateSpy = jest.spyOn(data, 'destroy').mockRejectedValueOnce(new Error());
 
-    const res = usersController.delete({
+    const res = usersController.destroy({
       headers: { token: 'secret' },
       payload: { phone: '2251234567' },
     });
@@ -280,12 +280,12 @@ describe('delete', () => {
     expect(res).rejects.toHaveProperty('status', 500);
   });
 
-  it('should delete the user record', async () => {
+  it('should destroy the user record', async () => {
     const tokenSpy = jest.spyOn(tokens, 'verifyToken').mockResolvedValueOnce(true);
     const readSpy = jest.spyOn(data, 'read').mockResolvedValueOnce({});
     const updateSpy = jest.spyOn(data, 'destroy').mockResolvedValueOnce({});
 
-    const res = await usersController.delete({
+    const res = await usersController.destroy({
       headers: { token: 'secret' },
       payload: { phone: '2251234567' },
     });

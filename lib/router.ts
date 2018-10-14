@@ -1,6 +1,6 @@
 import checksController from '../controllers/checks';
 import tokensController from '../controllers/tokens';
-import usersController from '../controllers/users';
+import * as usersController from '../controllers/users';
 
 const ping = (data) => {
   return Promise.reject({ code: 200 });
@@ -38,7 +38,10 @@ const router = {
   checks,
   ping,
   tokens,
-  users,
+  users: {
+    ...usersController,
+    delete: usersController.destroy, // delete is a reserved word
+  },
 };
 
 export const matchRoute = (trimmedPath: string) =>

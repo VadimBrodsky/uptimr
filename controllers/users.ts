@@ -1,4 +1,4 @@
-import { create, destroy, read, update } from '../lib/data';
+import * as db from '../lib/data';
 import { hash, validateTrimmedFn } from '../lib/helpers';
 import HTTPError from '../lib/http-error';
 import logger from '../lib/logger';
@@ -6,8 +6,8 @@ import { verifyToken } from './tokens';
 
 export const loggedInUser = async (tokenId: string) => {
   try {
-    const { phone } = await read('tokens', tokenId);
-    const user: Iuser = await read('users', phone);
+    const { phone } = await db.read('tokens', tokenId);
+    const user: Iuser = await db.read('users', phone);
     return user;
   } catch (e) {
     return Promise.reject(e);
@@ -26,184 +26,178 @@ interface Iuser {
   userChecks?: [string];
 }
 
-interface Idata {
-  payload: Iuser;
+export async function post({
+  payload,
+}: {
+  payload: {
+    firstName: string;
+    lastName: string;
+    phone: string;
+    password: string;
+    tosAgreement: boolean;
+  };
+}) {
+  const firstName = validateBlank(payload.firstName);
+  const lastName = validateBlank(payload.lastName);
+  const phone = validateTen(payload.phone);
+  const password = validateBlank(payload.password);
+  const tosAgreement = !!payload.tosAgreement;
+
+  if (!firstName || !lastName || !phone || !password || !tosAgreement) {
+    return Promise.reject(new HTTPError(400, 'Missing required fields'));
+  }
+
+  let existingUser;
+  try {
+    existingUser = await db.read('users', phone);
+  } catch (e) {
+    existingUser = null;
+  }
+
+  if (existingUser) {
+    throw new HTTPError(400, 'A user with that phone number already exists');
+  }
+
+  try {
+    await db.create('users', phone, {
+      firstName,
+      lastName,
+      password: hash(password),
+      phone,
+      tosAgreement,
+    });
+  } catch (e) {
+    throw new HTTPError(500, 'Could not create the new user');
+  }
+
+  return { status: 200 };
 }
 
-export default {
-  async post({
-    payload,
-  }: {
-    payload: {
-      firstName: string;
-      lastName: string;
-      phone: string;
-      password: string;
-      tosAgreement: boolean;
+export async function get({
+  query,
+  headers,
+}: {
+  query: { phone: string };
+  headers: { token: string };
+}) {
+  const user = validateTen(query.phone);
+
+  if (!user) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
+
+  if (!headers.token) {
+    throw new HTTPError(403, 'Missing required token in header, or token is invalid');
+  }
+
+  try {
+    await verifyToken(headers.token, user);
+  } catch (e) {
+    throw new HTTPError(403, 'Token is invalid');
+  }
+
+  try {
+    return {
+      payload: await db.read('users', user),
+      status: 200,
     };
-  }) {
-    const firstName = validateBlank(payload.firstName);
-    const lastName = validateBlank(payload.lastName);
-    const phone = validateTen(payload.phone);
-    const password = validateBlank(payload.password);
-    const tosAgreement = !!payload.tosAgreement;
+  } catch (e) {
+    throw new HTTPError(404);
+  }
+}
 
-    if (!firstName || !lastName || !phone || !password || !tosAgreement) {
-      return Promise.reject(new HTTPError(400, 'Missing required fields'));
-    }
+export async function put({
+  payload,
+  headers,
+}: {
+  payload: {
+    phone: string;
+    firstName?: string;
+    lastName?: string;
+    password?: string;
+  };
+  headers: { token: string };
+}) {
+  // required
+  const user = validateTen(payload.phone);
 
-    let existingUser;
-    try {
-      existingUser = await read('users', phone);
-    } catch (e) {
-      existingUser = null;
-    }
+  // optional
+  const firstName = validateBlank(payload.firstName);
+  const lastName = validateBlank(payload.lastName);
+  const password = validateBlank(payload.password);
 
-    if (existingUser) {
-      throw new HTTPError(400, 'A user with that phone number already exists');
-    }
+  if (!user) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
 
-    try {
-      await create('users', phone, {
-        firstName,
-        lastName,
-        password: hash(password),
-        phone,
-        tosAgreement,
-      });
-    } catch (e) {
-      throw new HTTPError(500, 'Could not create the new user');
-    }
+  if (!headers.token) {
+    throw new HTTPError(403, 'Missing required token in header, or token is invalid');
+  }
 
-    return { status: 200 };
-  },
+  try {
+    await verifyToken(headers.token, user);
+  } catch (e) {
+    throw new HTTPError(403, 'Token is invalid');
+  }
 
-  async get({
-    query,
-    headers,
-  }: {
-    query: { phone: string };
-    headers: { token: string };
-  }) {
-    const user = validateTen(query.phone);
+  if (!firstName && !lastName && !password) {
+    throw new HTTPError(400, 'Missing fields to update');
+  }
 
-    if (!user) {
-      throw new HTTPError(400, 'Missing required fields');
-    }
+  let userRecord: Iuser;
+  try {
+    userRecord = await db.read('users', user);
+  } catch (e) {
+    throw new HTTPError(404, 'The specified user does not exist');
+  }
 
-    if (!headers.token) {
-      throw new HTTPError(403, 'Missing required token in header, or token is invalid');
-    }
+  try {
+    await db.update('users', user, {
+      ...userRecord,
+      firstName: firstName ? firstName : userRecord.firstName,
+      lastName: lastName ? lastName : userRecord.lastName,
+      password: password ? hash(password) : userRecord.password,
+    });
+  } catch (e) {
+    throw new HTTPError(500, 'Could not update the user');
+  }
 
-    try {
-      await verifyToken(headers.token, user);
-    } catch (e) {
-      throw new HTTPError(403, 'Token is invalid');
-    }
+  return { status: 200 };
+}
 
-    try {
-      return {
-        payload: await read('users', user),
-        status: 200,
-      };
-    } catch (e) {
-      throw new HTTPError(404);
-    }
-  },
+export async function destroy({
+  payload,
+  headers,
+}: {
+  payload: { phone: string };
+  headers: { token: string };
+}) {
+  const user = validateTen(payload.phone);
+  if (!user) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
 
-  async put({
-    payload,
-    headers,
-  }: {
-    payload: {
-      phone: string;
-      firstName?: string;
-      lastName?: string;
-      password?: string;
-    };
-    headers: { token: string };
-  }) {
-    // required
-    const user = validateTen(payload.phone);
+  if (!headers.token) {
+    throw new HTTPError(403, 'Missing required token in header, or token is invalid');
+  }
 
-    // optional
-    const firstName = validateBlank(payload.firstName);
-    const lastName = validateBlank(payload.lastName);
-    const password = validateBlank(payload.password);
+  try {
+    await verifyToken(headers.token, user);
+  } catch (e) {
+    throw new HTTPError(403, 'Token is invalid');
+  }
 
-    if (!user) {
-      throw new HTTPError(400, 'Missing required fields');
-    }
+  try {
+    await db.read('users', user);
+  } catch (e) {
+    throw new HTTPError(404, 'The specified user does not exist');
+  }
 
-    if (!headers.token) {
-      throw new HTTPError(403, 'Missing required token in header, or token is invalid');
-    }
+  try {
+    await db.destroy('users', user);
+  } catch (e) {
+    throw new HTTPError(500, 'Could not delete the specified user');
+  }
 
-    try {
-      await verifyToken(headers.token, user);
-    } catch (e) {
-      throw new HTTPError(403, 'Token is invalid');
-    }
-
-    if (!firstName && !lastName && !password) {
-      throw new HTTPError(400, 'Missing fields to update');
-    }
-
-    let userRecord: Iuser;
-    try {
-      userRecord = await read('users', user);
-    } catch (e) {
-      throw new HTTPError(404, 'The specified user does not exist');
-    }
-
-    try {
-      await update('users', user, {
-        ...userRecord,
-        firstName: firstName ? firstName : userRecord.firstName,
-        lastName: lastName ? lastName : userRecord.lastName,
-        password: password ? hash(password) : userRecord.password,
-      });
-    } catch (e) {
-      throw new HTTPError(500, 'Could not update the user');
-    }
-
-    return { status: 200 };
-  },
-
-  async delete({
-    payload,
-    headers,
-  }: {
-    payload: { phone: string };
-    headers: { token: string };
-  }) {
-    const user = validateTen(payload.phone);
-    if (!user) {
-      throw new HTTPError(400, 'Missing required fields');
-    }
-
-    if (!headers.token) {
-      throw new HTTPError(403, 'Missing required token in header, or token is invalid');
-    }
-
-    try {
-      await verifyToken(headers.token, user);
-    } catch (e) {
-      throw new HTTPError(403, 'Token is invalid');
-    }
-
-    try {
-      await read('users', user);
-    } catch (e) {
-      throw new HTTPError(404, 'The specified user does not exist');
-    }
-
-    try {
-      await destroy('users', user);
-    } catch (e) {
-      throw new HTTPError(500, 'Could not delete the specified user');
-    }
-
-    return { status: 200 };
-  },
-};
+  return { status: 200 };
+}
