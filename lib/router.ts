@@ -39,8 +39,10 @@ const router = {
   ping,
   tokens,
   users: {
-    ...usersController,
-    delete: usersController.destroy, // delete is a reserved word
+    delete: usersController.destroy,
+    get: usersController.get,
+    post: usersController.post,
+    put: usersController.put,
   },
 };
 
