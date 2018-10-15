@@ -1,5 +1,6 @@
 import { create, destroy, read, update } from '../lib/data';
 import { createToken, hash, validateTrimmedFn } from '../lib/helpers';
+import HTTPError from '../lib/http-error';
 
 const validatePassword = validateTrimmedFn((len) => len > 0);
 const validatePhone = validateTrimmedFn((len) => len === 10);
@@ -14,36 +15,42 @@ export const verifyToken = (id: string, phone: string) =>
     }
   });
 
-export default {
-  post({ payload }: { payload: { phone: string; password: string } }, cb) {
-    const user = validatePhone(payload.phone);
-    const password = validatePassword(payload.password);
+export async function post({
+  payload,
+}: {
+  payload: { phone: string; password: string };
+}) {
+  const cb = (code, data) => {};
 
-    if (user && password) {
-      read('users', user)
-        .then((userData) => {
-          const sentPasswordHash = hash(password);
-          if (sentPasswordHash === userData.password) {
-            const tokenId = createToken(20);
-            console.log(tokenId);
+  const user = validatePhone(payload.phone);
+  const password = validatePassword(payload.password);
 
-            create('tokens', tokenId, {
-              expires: Date.now() + 1000 * 60 * 60,
-              phone: user,
-              tokenId,
-            })
-              .then((writtenData) => cb(200, writtenData))
-              .catch(() => cb(500, { Error: 'Could not create the new token' }));
-          } else {
-            cb(400, { Error: "Password did not match the specified user's password" });
-          }
+  if (!user && !password) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
+
+  read('users', user)
+    .then((userData) => {
+      const sentPasswordHash = hash(password);
+      if (sentPasswordHash === userData.password) {
+        const tokenId = createToken(20);
+        console.log(tokenId);
+
+        create('tokens', tokenId, {
+          expires: Date.now() + 1000 * 60 * 60,
+          phone: user,
+          tokenId,
         })
-        .catch(() => cb(400, 'Could not fild the specified user'));
-    } else {
-      cb(400, { Error: 'Missing required fields' });
-    }
-  },
+          .then((writtenData) => cb(200, writtenData))
+          .catch(() => cb(500, { Error: 'Could not create the new token' }));
+      } else {
+        cb(400, { Error: "Password did not match the specified user's password" });
+      }
+    })
+    .catch(() => cb(400, 'Could not fild the specified user'));
+}
 
+export default {
   get({ query }: { query: { id: string } }, cb) {
     const id = validateId(query.id);
     if (id) {

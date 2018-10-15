@@ -35,3 +35,16 @@ describe('verifyToken', () => {
     expect(tokenPromise).rejects.toHaveProperty('message', 'Invalid token');
   });
 });
+
+describe('post', () => {
+  it('should return 400 if missing any of the required fields', () => {
+    const res = tokensController.post({
+      payload: {
+        password: undefined,
+        phone: undefined,
+      },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+});
