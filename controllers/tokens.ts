@@ -20,50 +20,54 @@ export async function post({
 }: {
   payload: { phone: string; password: string };
 }) {
-  const cb = (code, data) => {};
-
   const user = validatePhone(payload.phone);
   const password = validatePassword(payload.password);
 
-  if (!user && !password) {
+  if (!user || !password) {
     throw new HTTPError(400, 'Missing required fields');
   }
 
-  read('users', user)
-    .then((userData) => {
-      const sentPasswordHash = hash(password);
-      if (sentPasswordHash === userData.password) {
-        const tokenId = createToken(20);
-        console.log(tokenId);
+  let userData;
+  try {
+    userData = await read('users', user);
+  } catch (e) {
+    throw new HTTPError(404, 'Could not fild the specified user');
+  }
 
-        create('tokens', tokenId, {
-          expires: Date.now() + 1000 * 60 * 60,
-          phone: user,
-          tokenId,
-        })
-          .then((writtenData) => cb(200, writtenData))
-          .catch(() => cb(500, { Error: 'Could not create the new token' }));
-      } else {
-        cb(400, { Error: "Password did not match the specified user's password" });
-      }
-    })
-    .catch(() => cb(400, 'Could not fild the specified user'));
+  if (hash(password) !== userData.password) {
+    throw new HTTPError(400, "Password did not match the specified user's password");
+  }
+
+  try {
+    const tokenId = createToken(20);
+    const writtenData = await create('tokens', tokenId, {
+      expires: Date.now() + 1000 * 60 * 60,
+      phone: user,
+      tokenId,
+    });
+    return { status: 200, writtenData };
+  } catch (e) {
+    throw new HTTPError(500, 'Could not create the new token');
+  }
+
+}
+
+export async function get({ query }: { query: { id: string } }) {
+  const id = validateId(query.id);
+
+  if (!id) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
+
+  try {
+    const tokenData = await read('tokens', id);
+    return { status: 200, tokenData };
+  } catch (e) {
+    throw new HTTPError(404, 'Token could not be found');
+  }
 }
 
 export default {
-  get({ query }: { query: { id: string } }, cb) {
-    const id = validateId(query.id);
-    if (id) {
-      read('tokens', id)
-        .then((tokenData) => {
-          cb(200, tokenData);
-        })
-        .catch(() => cb(404));
-    } else {
-      cb(400, { Error: 'Missing required fields' });
-    }
-  },
-
   put({ payload }: { payload: { id: string; extend: boolean } }, cb) {
     const id = validateId(payload.id);
     const extend = !!payload.extend;
