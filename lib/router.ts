@@ -1,5 +1,5 @@
 import checksController from '../controllers/checks';
-import tokensController from '../controllers/tokens';
+import * as tokensController from '../controllers/tokens';
 import * as usersController from '../controllers/users';
 
 const ping = (data) => {
@@ -37,7 +37,12 @@ const checks = (data, callback) => {
 const router = {
   checks,
   ping,
-  tokens,
+  tokens: {
+    delete: tokensController.destroy,
+    get: tokensController.get,
+    post: tokensController.post,
+    put: tokensController.put,
+  },
   users: {
     delete: usersController.destroy,
     get: usersController.get,
