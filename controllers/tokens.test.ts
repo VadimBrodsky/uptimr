@@ -177,5 +177,45 @@ describe('put', () => {
     });
 
     expect(res.status).toBe(200);
-  })
+  });
+});
+
+describe('destroy', () => {
+  it('should return 400 if missing any of the required fields', () => {
+    const res = tokensController.destroy({ payload: { id: undefined } });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+
+  it('should return 404 if the token data is not found', () => {
+    jest.spyOn(data, 'read').mockRejectedValueOnce(new Error());
+
+    const res = tokensController.destroy({
+      payload: { id: '12345678901234567890' },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 404);
+  });
+
+  it('should return 500 if token destroy fails', () => {
+    jest.spyOn(data, 'read').mockResolvedValueOnce({});
+    jest.spyOn(data, 'destroy').mockRejectedValueOnce(new Error());
+
+    const res = tokensController.destroy({
+      payload: { id: '12345678901234567890' },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 500);
+  });
+
+  it('should return 200 if the token was destroyed successfully', async () => {
+    jest.spyOn(data, 'read').mockResolvedValueOnce({});
+    jest.spyOn(data, 'destroy').mockResolvedValueOnce({});
+
+    const res = await tokensController.destroy({
+      payload: { id: '12345678901234567890' },
+    });
+
+    expect(res.status).toBe(200);
+  });
 });

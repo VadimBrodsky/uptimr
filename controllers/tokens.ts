@@ -1,4 +1,4 @@
-import { create, destroy, read, update } from '../lib/data';
+import * as db from '../lib/data';
 import { createToken, hash, validateTrimmedFn } from '../lib/helpers';
 import HTTPError from '../lib/http-error';
 
@@ -7,7 +7,7 @@ const validatePhone = validateTrimmedFn((len) => len === 10);
 const validateId = validateTrimmedFn((len) => len === 20);
 
 export const verifyToken = (id: string, phone: string) =>
-  read('tokens', id).then((tokenData) => {
+  db.read('tokens', id).then((tokenData) => {
     if (tokenData.phone === phone && tokenData.expires > Date.now()) {
       return true;
     } else {
@@ -29,7 +29,7 @@ export async function post({
 
   let userData;
   try {
-    userData = await read('users', user);
+    userData = await db.read('users', user);
   } catch (e) {
     throw new HTTPError(404, 'Could not fild the specified user');
   }
@@ -40,7 +40,7 @@ export async function post({
 
   try {
     const tokenId = createToken(20);
-    const writtenData = await create('tokens', tokenId, {
+    const writtenData = await db.create('tokens', tokenId, {
       expires: Date.now() + 1000 * 60 * 60,
       phone: user,
       tokenId,
@@ -59,7 +59,7 @@ export async function get({ query }: { query: { id: string } }) {
   }
 
   try {
-    const tokenData = await read('tokens', id);
+    const tokenData = await db.read('tokens', id);
     return { status: 200, tokenData };
   } catch (e) {
     throw new HTTPError(404, 'Token could not be found');
@@ -76,7 +76,7 @@ export async function put({ payload }: { payload: { id: string; extend: boolean 
 
   let tokenData;
   try {
-    tokenData = await read('tokens', id);
+    tokenData = await db.read('tokens', id);
   } catch (e) {
     throw new HTTPError(404, 'Specified token does not exist');
   }
@@ -89,7 +89,7 @@ export async function put({ payload }: { payload: { id: string; extend: boolean 
   }
 
   try {
-    await update('tokens', id, {
+    await db.update('tokens', id, {
       ...tokenData,
       expires: Date.now() + 1000 * 60 * 60,
     });
@@ -100,19 +100,24 @@ export async function put({ payload }: { payload: { id: string; extend: boolean 
   return { status: 200 };
 }
 
-export default {
-  delete({ payload }: { payload: { id: string } }, cb) {
-    const id = validateId(payload.id);
-    if (id) {
-      read('tokens', id)
-        .then(() => {
-          destroy('tokens', id)
-            .then(() => cb(200))
-            .catch(() => cb(500, { Error: 'Could not delete the specified token' }));
-        })
-        .catch(() => cb(400, { Error: 'Could not find the specified token' }));
-    } else {
-      cb(400, { Error: 'Missing required fields' });
-    }
-  },
-};
+export async function destroy({ payload }: { payload: { id: string } }) {
+  const id = validateId(payload.id);
+
+  if (!id) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
+
+  try {
+    await db.read('tokens', id);
+  } catch (e) {
+    throw new HTTPError(404, 'Could not find the specified token');
+  }
+
+  try {
+    await db.destroy('tokens', id);
+  } catch (e) {
+    throw new HTTPError(500, 'Could not delete the specified token');
+  }
+
+  return { status: 200 };
+}
