@@ -49,7 +49,6 @@ export async function post({
   } catch (e) {
     throw new HTTPError(500, 'Could not create the new token');
   }
-
 }
 
 export async function get({ query }: { query: { id: string } }) {
@@ -67,33 +66,41 @@ export async function get({ query }: { query: { id: string } }) {
   }
 }
 
+export async function put({ payload }: { payload: { id: string; extend: boolean } }) {
+  const id = validateId(payload.id);
+  const extend = !!payload.extend;
+
+  if (!id || !payload) {
+    throw new HTTPError(400, 'Missing required fields');
+  }
+
+  let tokenData;
+  try {
+    tokenData = await read('tokens', id);
+  } catch (e) {
+    throw new HTTPError(404, 'Specified token does not exist');
+  }
+
+  if (tokenData.expires < Date.now()) {
+    throw new HTTPError(
+      400,
+      'The token has already been expired, and cannot be extended',
+    );
+  }
+
+  try {
+    await update('tokens', id, {
+      ...tokenData,
+      expires: Date.now() + 1000 * 60 * 60,
+    });
+  } catch (e) {
+    throw new HTTPError(500, "Could not update the token/'s expiration");
+  }
+
+  return { status: 200 };
+}
+
 export default {
-  put({ payload }: { payload: { id: string; extend: boolean } }, cb) {
-    const id = validateId(payload.id);
-    const extend = !!payload.extend;
-
-    if (id && payload) {
-      read('tokens', id)
-        .then((tokenData) => {
-          if (tokenData.expires > Date.now()) {
-            update('tokens', id, {
-              ...tokenData,
-              expires: Date.now() + 1000 * 60 * 60,
-            })
-              .then(() => cb(200))
-              .catch(() => cb(500, { Error: "Could not update the token's expiration" }));
-          } else {
-            cb(400, {
-              Error: 'The token has already been expired, and cannot be extended',
-            });
-          }
-        })
-        .catch(() => cb(400, { Error: 'Specified token does not exist' }));
-    } else {
-      cb(400, { Error: 'Missing required fields' });
-    }
-  },
-
   delete({ payload }: { payload: { id: string } }, cb) {
     const id = validateId(payload.id);
     if (id) {

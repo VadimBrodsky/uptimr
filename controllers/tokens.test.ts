@@ -129,3 +129,53 @@ describe('get', () => {
     expect(res.tokenData).toBeDefined();
   });
 });
+
+describe('put', () => {
+  it('should return 400 if missing any of the required fields', () => {
+    const res = tokensController.put({ payload: { id: undefined, extend: undefined } });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+
+  it('should return 404 if the token data is not found', () => {
+    jest.spyOn(data, 'read').mockRejectedValueOnce(new Error());
+
+    const res = tokensController.put({
+      payload: { id: '12345678901234567890', extend: true },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 404);
+  });
+
+  it('should return 400 if the token is already expired', () => {
+    jest.spyOn(data, 'read').mockResolvedValueOnce({ expires: Date.now() - 1000 });
+
+    const res = tokensController.put({
+      payload: { id: '12345678901234567890', extend: true },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 400);
+  });
+
+  it('should return 500 if token update fails', () => {
+    jest.spyOn(data, 'read').mockResolvedValueOnce({ expires: Date.now() * 2 });
+    jest.spyOn(data, 'update').mockRejectedValueOnce(new Error());
+
+    const res = tokensController.put({
+      payload: { id: '12345678901234567890', extend: true },
+    });
+
+    expect(res).rejects.toHaveProperty('status', 500);
+  });
+
+  it('should return 200 if the token was extended successfully', async () => {
+    jest.spyOn(data, 'read').mockResolvedValueOnce({ expires: Date.now() * 2 });
+    jest.spyOn(data, 'update').mockResolvedValueOnce({});
+
+    const res = await tokensController.put({
+      payload: { id: '12345678901234567890', extend: true },
+    });
+
+    expect(res.status).toBe(200);
+  })
+});
