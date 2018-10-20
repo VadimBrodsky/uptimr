@@ -7,7 +7,7 @@ import config from './lib/config';
 import { parseJSON } from './lib/helpers';
 import { matchRoute } from './lib/router';
 
-const unifiedServer = (req, res) => {
+const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
   // get the URL and parse it
   const parsedUrl = url.parse(req.url, true);
 
@@ -48,6 +48,7 @@ const unifiedServer = (req, res) => {
 
     // route to the correct handler controller
     const controller = matchRoute(trimmedPath);
+    console.log('controller ================>', controller);
 
     // construct the payload for the handler
     const data = {
@@ -59,20 +60,25 @@ const unifiedServer = (req, res) => {
     };
 
     // handle the request
-    controller(data).then((statusCode = 200, payload = {}) => {
-      const payloadString = JSON.stringify(payload);
-      // send the respose
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(statusCode);
-      res.end(payloadString);
+    controller(data)
+      .then(({ status = 200, payload = {} }) => {
+        const payloadString = JSON.stringify(payload);
 
-      // log the response
-      console.log('RES:', statusCode, payloadString);
-    }, ({ status, payload = {} }) => {
-      res.setHeader('Content-Type', 'application/json');
-      res.writeHead(status);
-      res.end(payload);
-    });
+        // send the respose
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(status);
+
+        res.end(payloadString);
+
+        // log the response
+        console.log('======================> RES:', status, payloadString);
+      })
+      .catch(({ statusCode, payload = {} }) => {
+        console.log('========================> Cought', statusCode);
+        res.setHeader('Content-Type', 'application/json');
+        res.writeHead(statusCode);
+        res.end(JSON.stringify(payload));
+      });
   });
 };
 
