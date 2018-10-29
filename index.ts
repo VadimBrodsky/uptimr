@@ -5,6 +5,7 @@ import * as sd from 'string_decoder';
 import * as url from 'url';
 import config from './lib/config';
 import { parseJSON } from './lib/helpers';
+import log from './lib/logger';
 import { matchRoute } from './lib/router';
 
 const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
@@ -35,7 +36,7 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
     buffer += decoder.end();
 
     // log the response back
-    console.log(
+    log(
       'REQ:',
       method,
       '/',
@@ -48,7 +49,6 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
 
     // route to the correct handler controller
     const controller = matchRoute(trimmedPath);
-    console.log('controller ================>', controller);
 
     // construct the payload for the handler
     const data = {
@@ -71,13 +71,19 @@ const unifiedServer = (req: http.IncomingMessage, res: http.ServerResponse) => {
         res.end(payloadString);
 
         // log the response
-        console.log('======================> RES:', status, payloadString);
+        log('RES:', status, payloadString);
       })
-      .catch(({ statusCode, payload = {} }) => {
-        console.log('========================> Cought', statusCode);
+      .catch(({ status = 500, payload = {} }) => {
+        const payloadString = JSON.stringify(payload);
+
+        // send the respose
         res.setHeader('Content-Type', 'application/json');
-        res.writeHead(statusCode);
-        res.end(JSON.stringify(payload));
+        res.writeHead(status);
+
+        res.end(payloadString);
+
+        // log the response
+        log('RES:', status, payloadString);
       });
   });
 };
@@ -92,7 +98,7 @@ const httpsServer = https.createServer(
 );
 
 httpServer.listen(config.httpPort, () => {
-  console.log(
+  log(
     `The http server is now listening on port ${config.httpPort} in ${
       config.envName
     } mode`,
@@ -100,7 +106,7 @@ httpServer.listen(config.httpPort, () => {
 });
 
 httpsServer.listen(config.httpsPort, () => {
-  console.log(
+  log(
     `The https server is now listening on port ${config.httpsPort} in ${
       config.envName
     } mode`,
