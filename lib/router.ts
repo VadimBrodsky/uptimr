@@ -2,52 +2,39 @@ import checksController from '../controllers/checks';
 import * as pingController from '../controllers/ping';
 import * as tokensController from '../controllers/tokens';
 import * as usersController from '../controllers/users';
+import log from '../lib/logger';
 
-
-const notFound = (data) => {
-  return Promise.resolve({ status: 404 });
-};
-
-const users = (data) => {
-  if (Object.keys(usersController).includes(data.method)) {
-    return usersController[data.method](data);
+const matchMethod = (controller) => (data) => {
+  if (Object.keys(controller).includes(data.method)) {
+    return controller[data.method](data);
   } else {
     return Promise.reject({ status: 405 });
-  }
-};
-
-const tokens = (data) => {
-  if (Object.keys(tokensController).includes(data.method)) {
-    return tokensController[data.method](data);
-  } else {
-    return Promise.reject({ status: 405 });
-  }
-};
-
-const checks = (data, callback) => {
-  if (Object.keys(checksController).includes(data.method)) {
-    checksController[data.method](data, callback);
-  } else {
-    callback(405);
   }
 };
 
 const router = {
-  checks,
-  ping: pingController.get,
-  tokens: {
+  checks: matchMethod({
+    // WIP
+    post: checksController.get,
+  }),
+  ping: matchMethod({
+    get: pingController.get,
+  }),
+  tokens: matchMethod({
     delete: tokensController.destroy,
     get: tokensController.get,
     post: tokensController.post,
     put: tokensController.put,
-  },
-  users: {
+  }),
+  users: matchMethod({
     delete: usersController.destroy,
     get: usersController.get,
     post: usersController.post,
     put: usersController.put,
-  },
+  }),
 };
 
 export const matchRoute = (trimmedPath: string) =>
-  Object.keys(router).includes(trimmedPath) ? router[trimmedPath] : notFound;
+  Object.keys(router).includes(trimmedPath)
+    ? router[trimmedPath]
+    : Promise.reject({ status: 404 });
